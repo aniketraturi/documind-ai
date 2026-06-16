@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 
-from app.core.errors import bad_request_error
-from app.core.security import hash_password
+from app.core.errors import bad_request_error, unauthorized_error
+from app.core.security import create_access_token, hash_password, verify_password
 from app.repositories.user_repository import create_user, get_user_by_email
-from app.schemas.auth import RegisterRequest
+from app.schemas.auth import LoginRequest, RegisterRequest
 
 
 def register_user(db: Session, request: RegisterRequest):
@@ -22,3 +22,20 @@ def register_user(db: Session, request: RegisterRequest):
     )
 
     return user
+
+
+def login_user(db: Session, request: LoginRequest):
+    user = get_user_by_email(db, request.email)
+
+    if not user:
+        raise unauthorized_error("Invalid email or password")
+
+    if not verify_password(request.password, user.hashed_password):
+        raise unauthorized_error("Invalid email or password")
+
+    access_token = create_access_token(subject=str(user.id))
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+    }
