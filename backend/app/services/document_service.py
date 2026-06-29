@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import bad_request_error
 from app.models.user import User
-from app.repositories.document_repository import create_document
+from app.repositories.document_repository import create_document, get_documents_by_owner
 
 UPLOAD_DIR = Path("uploads/documents")
 
@@ -46,3 +46,13 @@ def upload_document(
     )
 
     return document
+
+def list_user_documents(
+    db: Session,
+    *,
+    current_user: User,
+):
+    return get_documents_by_owner(
+        db,
+        owner_id=current_user.id,
+    )
