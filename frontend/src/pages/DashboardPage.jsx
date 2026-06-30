@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 
@@ -48,6 +48,13 @@ function DashboardPage() {
             <p className="text-sm text-slate-400">Documents</p>
             <p className="mt-2 text-xl font-semibold">Coming soon</p>
           </div>
+          <Link
+            to="/documents"
+            className="rounded-2xl border border-slate-800 bg-slate-900 p-6 hover:border-cyan-400"
+              >
+            <p className="text-sm text-slate-400">Documents</p>
+            <p className="mt-2 text-xl font-semibold">Upload PDFs</p>
+          </Link>
         </section>
 
         <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
