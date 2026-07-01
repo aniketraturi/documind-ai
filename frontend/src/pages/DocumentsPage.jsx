@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { getDocuments, uploadDocument } from "../api/documentApi";
+import DocumentCard from "../components/DocumentCard";
 import { useAuth } from "../context/AuthContext";
 
 function DocumentsPage() {
@@ -115,9 +116,11 @@ function DocumentsPage() {
         <header className="flex items-center justify-between border-b border-slate-800 pb-6">
           <div>
             <p className="text-sm font-medium text-cyan-400">DocuMind AI</p>
+
             <h1 className="mt-2 text-3xl font-bold tracking-tight">
               Documents
             </h1>
+
             <p className="mt-2 text-sm text-slate-400">
               Logged in as {user?.email}
             </p>
@@ -208,34 +211,7 @@ function DocumentsPage() {
           ) : (
             <div className="mt-6 space-y-3">
               {documents.map((document) => (
-                <div
-                  key={document.id}
-                  className="rounded-xl border border-slate-800 bg-slate-950 p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {document.title}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {document.filename}
-                      </p>
-                    </div>
-
-                    <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
-                      {document.status}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 text-sm text-slate-400 md:grid-cols-3">
-                    <p>Chunks: {document.chunk_count}</p>
-                    <p>Pages: {document.total_pages ?? "Not processed"}</p>
-                    <p>
-                      Uploaded:{" "}
-                      {new Date(document.created_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
+                <DocumentCard key={document.id} document={document} />
               ))}
             </div>
           )}
