@@ -15,3 +15,7 @@ class DocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DocumentDetailResponse(DocumentResponse):
+    extracted_text: str | None

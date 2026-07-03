@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -20,6 +20,7 @@ class Document(Base):
     title = Column(String(255), nullable=False)
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
+    extracted_text = Column(Text, nullable=True)
 
     status = Column(String(50), nullable=False, default="uploaded")
 
@@ -35,3 +36,5 @@ class Document(Base):
     )
 
     owner = relationship("User", back_populates="documents")
+
+    

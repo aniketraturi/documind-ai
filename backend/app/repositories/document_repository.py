@@ -38,3 +38,36 @@ def get_documents_by_owner(
         .order_by(Document.created_at.desc())
         .all()
     )
+
+def get_document_by_id(
+    db: Session,
+    *,
+    document_id: int,
+) -> Document | None:
+    return db.query(Document).filter(Document.id == document_id).first()
+
+
+def delete_document(
+    db: Session,
+    *,
+    document: Document,
+) -> None:
+    db.delete(document)
+    db.commit()
+
+def update_document_after_processing(
+    db: Session,
+    *,
+    document: Document,
+    extracted_text: str,
+    total_pages: int,
+    status: str = "processed",
+) -> Document:
+    document.extracted_text = extracted_text
+    document.total_pages = total_pages
+    document.status = status
+
+    db.commit()
+    db.refresh(document)
+
+    return document
