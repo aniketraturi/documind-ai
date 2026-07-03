@@ -5,10 +5,14 @@ from uuid import uuid4
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.errors import bad_request_error
+from app.core.errors import bad_request_error, forbidden_error, not_found_error
 from app.models.user import User
-from app.repositories.document_repository import create_document, get_documents_by_owner
-
+from app.repositories.document_repository import (
+    create_document,
+    delete_document,
+    get_document_by_id,
+    get_documents_by_owner,
+)
 UPLOAD_DIR = Path("uploads/documents")
 
 
@@ -56,3 +60,35 @@ def list_user_documents(
         db,
         owner_id=current_user.id,
     )
+
+def delete_user_document(
+    db: Session,
+    *,
+    document_id: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to delete this document")
+
+    file_path = Path(document.file_path)
+
+    try:
+        if file_path.exists():
+            file_path.unlink()
+    except OSError:
+            pass
+
+    delete_document(
+        db,
+        document=document,
+    )
+
+    return {"message": "Document deleted successfully"}
