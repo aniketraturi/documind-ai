@@ -10,6 +10,7 @@ from app.db.database import Base
 
 from app.models.user import User
 from app.models.document import Document  # noqa: F401  # noqa: F401
+from app.models.document_chunk import DocumentChunk  # noqa: F401
 # Alembic Config object
 config = context.config
 

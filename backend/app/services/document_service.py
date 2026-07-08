@@ -16,6 +16,12 @@ from app.repositories.document_repository import (
 )
 UPLOAD_DIR = Path("uploads/documents")
 from app.services.pdf_service import extract_text_from_pdf
+from app.repositories.chunk_repository import (
+    create_chunks,
+    delete_chunks_by_document,
+    get_chunks_by_document,
+)
+from app.services.chunking_service import split_text_into_chunks
 
 def upload_document(
     db: Session,
@@ -134,4 +140,83 @@ def process_user_document(
         extracted_text=extracted_text,
         total_pages=total_pages,
         status="processed",
+    )
+
+def chunk_user_document(
+    db: Session,
+    *,
+    document_id: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to chunk this document")
+
+    if not document.extracted_text:
+        raise bad_request_error("Document must be processed before chunking")
+
+    chunks = split_text_into_chunks(document.extracted_text)
+
+    if not chunks:
+        document.status = "failed"
+        db.commit()
+        raise bad_request_error("No chunks could be created from this document")
+
+    delete_chunks_by_document(
+        db,
+        document_id=document.id,
+    )
+
+    return create_chunks(
+        db,
+        document=document,
+        chunks=chunks,
+    )
+
+def get_user_document(
+    db: Session,
+    *,
+    document_id: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to view this document")
+
+    return document
+
+def list_user_document_chunks(
+    db: Session,
+    *,
+    document_id: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to view this document")
+
+    return get_chunks_by_document(
+        db,
+        document_id=document.id,
     )

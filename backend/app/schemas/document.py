@@ -19,3 +19,13 @@ class DocumentResponse(BaseModel):
 
 class DocumentDetailResponse(DocumentResponse):
     extracted_text: str | None
+
+class DocumentChunkResponse(BaseModel):
+    id: int
+    document_id: int
+    chunk_index: int
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
