@@ -19,3 +19,33 @@ export const getDocuments = async () => {
 
   return response.data;
 };
+
+export const deleteDocument = async (documentId) => {
+  const response = await apiClient.delete(`/documents/${documentId}`);
+
+  return response.data;
+};
+
+export const getDocumentById = async (documentId) => {
+  const response = await apiClient.get(`/documents/${documentId}`);
+
+  return response.data;
+};
+
+export const getDocumentChunks = async (documentId) => {
+  const response = await apiClient.get(`/documents/${documentId}/chunks`);
+
+  return response.data;
+};
+
+export const processDocument = async (documentId) => {
+  const response = await apiClient.post(`/documents/${documentId}/process`);
+
+  return response.data;
+};
+
+export const chunkDocument = async (documentId) => {
+  const response = await apiClient.post(`/documents/${documentId}/chunk`);
+
+  return response.data;
+};

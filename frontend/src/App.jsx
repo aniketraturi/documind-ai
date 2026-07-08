@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
+import DocumentDetailPage from "./pages/DocumentDetailPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -29,6 +30,15 @@ function App() {
         element={
           <ProtectedRoute>
             <DocumentsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/documents/:documentId"
+        element={
+          <ProtectedRoute>
+            <DocumentDetailPage />
           </ProtectedRoute>
         }
       />

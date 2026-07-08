@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { getDocuments, uploadDocument } from "../api/documentApi";
+import {deleteDocument,getDocuments,uploadDocument,} from "../api/documentApi";
 import DocumentCard from "../components/DocumentCard";
 import { useAuth } from "../context/AuthContext";
 
@@ -104,6 +104,29 @@ function DocumentsPage() {
       setUploading(false);
     }
   };
+
+  const handleDeleteDocument = async (documentId) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this document?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    setMessage("");
+
+    await deleteDocument(documentId);
+
+    setMessage("Document deleted successfully");
+    await loadDocuments();
+  } catch (error) {
+    console.error(error);
+    const detail = error.response?.data?.detail || "Delete failed";
+    setMessage(detail);
+  }
+};
 
   const handleLogout = () => {
     logout();
@@ -211,7 +234,7 @@ function DocumentsPage() {
           ) : (
             <div className="mt-6 space-y-3">
               {documents.map((document) => (
-                <DocumentCard key={document.id} document={document} />
+                <DocumentCard key={document.id} document={document} onDelete={handleDeleteDocument} />
               ))}
             </div>
           )}
