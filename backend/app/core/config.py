@@ -21,5 +21,14 @@ class Settings:
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
     )
 
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_EMBEDDING_MODEL: str = os.getenv(
+    "OPENAI_EMBEDDING_MODEL",
+    "text-embedding-3-small",
+    )
+
 
 settings = Settings()
+
+print("OPENAI KEY LOADED:", bool(settings.OPENAI_API_KEY))
+print("EMBEDDING MODEL:", settings.OPENAI_EMBEDDING_MODEL)

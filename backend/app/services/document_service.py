@@ -13,6 +13,7 @@ from app.repositories.document_repository import (
     get_document_by_id,
     get_documents_by_owner,
     update_document_after_processing,
+    update_document_status,
 )
 UPLOAD_DIR = Path("uploads/documents")
 from app.services.pdf_service import extract_text_from_pdf
@@ -20,8 +21,16 @@ from app.repositories.chunk_repository import (
     create_chunks,
     delete_chunks_by_document,
     get_chunks_by_document,
+    get_chunks_with_embeddings,
+    get_chunks_without_embeddings,
+    update_chunk_embedding,
 )
 from app.services.chunking_service import split_text_into_chunks
+
+from app.services.embedding_service import generate_embedding
+
+from app.schemas.document import DocumentSearchResult
+from app.services.search_service import cosine_similarity
 
 def upload_document(
     db: Session,
@@ -220,3 +229,103 @@ def list_user_document_chunks(
         db,
         document_id=document.id,
     )
+
+def embed_user_document_chunks(
+    db: Session,
+    *,
+    document_id: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to embed this document")
+
+    if document.chunk_count == 0:
+        raise bad_request_error("Document must be chunked before embedding")
+
+    chunks = get_chunks_without_embeddings(
+        db,
+        document_id=document.id,
+    )
+
+    if not chunks:
+        return update_document_status(
+            db,
+            document=document,
+            status="embedded",
+        )
+
+    for chunk in chunks:
+        embedding = generate_embedding(chunk.content)
+
+        update_chunk_embedding(
+            db,
+            chunk=chunk,
+            embedding=embedding,
+        )
+
+    return update_document_status(
+        db,
+        document=document,
+        status="embedded",
+    )
+
+def search_user_document_chunks(
+    db: Session,
+    *,
+    document_id: int,
+    query: str,
+    top_k: int,
+    current_user: User,
+):
+    document = get_document_by_id(
+        db,
+        document_id=document_id,
+    )
+
+    if document is None:
+        raise not_found_error("Document not found")
+
+    if document.owner_id != current_user.id:
+        raise forbidden_error("You do not have permission to search this document")
+
+    cleaned_query = query.strip()
+
+    if not cleaned_query:
+        raise bad_request_error("Search query cannot be empty")
+
+    chunks = get_chunks_with_embeddings(
+        db,
+        document_id=document.id,
+    )
+
+    if not chunks:
+        raise bad_request_error("Document must be embedded before searching")
+
+    query_embedding = generate_embedding(cleaned_query)
+
+    results: list[DocumentSearchResult] = []
+
+    for chunk in chunks:
+        similarity = cosine_similarity(query_embedding, chunk.embedding)
+
+        results.append(
+            DocumentSearchResult(
+                chunk_id=chunk.id,
+                document_id=chunk.document_id,
+                chunk_index=chunk.chunk_index,
+                content=chunk.content,
+                similarity=similarity,
+            )
+        )
+
+    results.sort(key=lambda result: result.similarity, reverse=True)
+
+    return results[:top_k]

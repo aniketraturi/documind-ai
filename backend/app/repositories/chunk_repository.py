@@ -56,3 +56,43 @@ def get_chunks_by_document(
         .order_by(DocumentChunk.chunk_index.asc())
         .all()
     )
+
+def update_chunk_embedding(
+    db: Session,
+    *,
+    chunk: DocumentChunk,
+    embedding: list[float],
+) -> DocumentChunk:
+    chunk.embedding = embedding
+
+    db.commit()
+    db.refresh(chunk)
+
+    return chunk
+
+def get_chunks_without_embeddings(
+    db: Session,
+    *,
+    document_id: int,
+) -> list[DocumentChunk]:
+    return (
+        db.query(DocumentChunk)
+        .filter(DocumentChunk.document_id == document_id)
+        .filter(DocumentChunk.embedding.is_(None))
+        .order_by(DocumentChunk.chunk_index.asc())
+        .all()
+    )
+
+
+def get_chunks_with_embeddings(
+    db: Session,
+    *,
+    document_id: int,
+) -> list[DocumentChunk]:
+    return (
+        db.query(DocumentChunk)
+        .filter(DocumentChunk.document_id == document_id)
+        .filter(DocumentChunk.embedding.isnot(None))
+        .order_by(DocumentChunk.chunk_index.asc())
+        .all()
+    )

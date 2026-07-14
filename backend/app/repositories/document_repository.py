@@ -71,3 +71,16 @@ def update_document_after_processing(
     db.refresh(document)
 
     return document
+
+def update_document_status(
+    db: Session,
+    *,
+    document: Document,
+    status: str,
+) -> Document:
+    document.status = status
+
+    db.commit()
+    db.refresh(document)
+
+    return document

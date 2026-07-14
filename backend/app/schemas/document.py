@@ -29,3 +29,15 @@ class DocumentChunkResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class DocumentSearchRequest(BaseModel):
+    query: str
+    top_k: int = 5
+
+
+class DocumentSearchResult(BaseModel):
+    chunk_id: int
+    document_id: int
+    chunk_index: int
+    content: str
+    similarity: float
