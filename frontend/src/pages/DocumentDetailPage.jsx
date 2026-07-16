@@ -3,9 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
   chunkDocument,
+  embedDocument,
   getDocumentById,
   getDocumentChunks,
   processDocument,
+  searchDocument,
 } from "../api/documentApi";
 import { useAuth } from "../context/AuthContext";
 
@@ -20,6 +22,12 @@ function DocumentDetailPage() {
   const [processing, setProcessing] = useState(false);
   const [chunking, setChunking] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [topK, setTopK] = useState(5);
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [embedding, setEmbedding] = useState(false);
 
   const loadDocumentData = async () => {
     try {
@@ -122,6 +130,63 @@ function DocumentDetailPage() {
       setChunking(false);
     }
   };
+
+  const handleEmbedDocument = async () => {
+  try {
+    setEmbedding(true);
+    setMessage("");
+
+    const embeddedDocument = await embedDocument(documentId);
+
+    setDocument(embeddedDocument);
+    setMessage("Document embedded successfully");
+
+    await loadDocumentData();
+  } catch (error) {
+    console.error(error);
+    const detail = error.response?.data?.detail || "Embedding failed";
+    setMessage(detail);
+
+    await loadDocumentData();
+  } finally {
+    setEmbedding(false);
+  }
+};
+
+
+  const handleSearch = async (event) => {
+  event.preventDefault();
+
+  const cleanedQuery = searchQuery.trim();
+
+  if (!cleanedQuery) {
+    setMessage("Please enter a search query");
+    return;
+  }
+
+  try {
+    setSearching(true);
+    setMessage("");
+
+    const results = await searchDocument({
+      documentId,
+      query: cleanedQuery,
+      topK: Number(topK),
+    });
+
+    setSearchResults(results);
+
+    if (results.length === 0) {
+      setMessage("No matching chunks found");
+    }
+  } catch (error) {
+    console.error(error);
+    const detail = error.response?.data?.detail || "Search failed";
+    setMessage(detail);
+  } finally {
+    setSearching(false);
+  }
+};
 
   const handleLogout = () => {
     logout();
@@ -244,6 +309,14 @@ function DocumentDetailPage() {
                 </button>
 
                 <button
+                onClick={handleEmbedDocument}
+  disabled={embedding || document.chunk_count === 0}
+  className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+>
+  {embedding ? "Embedding..." : "Embed Chunks"}
+</button>
+
+                <button
                   onClick={loadDocumentData}
                   className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-slate-200 hover:border-cyan-400 hover:text-cyan-400"
                 >
@@ -268,6 +341,95 @@ function DocumentDetailPage() {
                 </pre>
               )}
             </section>
+
+            <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">Semantic search</h2>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Search this document by meaning using chunk embeddings.
+                  </p>
+                </div>
+
+            <span className="w-fit rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+      Requires embedded status
+    </span>
+  </div>
+
+  <form onSubmit={handleSearch} className="mt-6 space-y-4">
+    <div>
+      <label className="mb-2 block text-sm text-slate-300">
+        Search query
+      </label>
+
+      <textarea
+        value={searchQuery}
+        onChange={(event) => setSearchQuery(event.target.value)}
+        rows={3}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400"
+        placeholder="Example: What does this document say about payment deadlines?"
+      />
+    </div>
+
+    <div className="flex flex-col gap-3 md:flex-row md:items-end">
+      <div>
+        <label className="mb-2 block text-sm text-slate-300">
+          Top results
+        </label>
+
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={topK}
+          onChange={(event) => setTopK(event.target.value)}
+          className="w-32 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={searching || document.status !== "embedded"}
+        className="rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {searching ? "Searching..." : "Search document"}
+      </button>
+    </div>
+  </form>
+
+  {document.status !== "embedded" && (
+    <p className="mt-4 text-sm text-slate-400">
+      Process, chunk, and embed this document before searching.
+    </p>
+  )}
+
+  {searchResults.length > 0 && (
+    <div className="mt-6 space-y-4">
+      <h3 className="font-semibold text-white">Search results</h3>
+
+      {searchResults.map((result) => (
+        <div
+          key={result.chunk_id}
+          className="rounded-xl border border-slate-800 bg-slate-950 p-4"
+        >
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm font-semibold text-cyan-400">
+              Chunk #{result.chunk_index + 1}
+            </p>
+
+            <p className="text-sm text-slate-400">
+              Similarity: {result.similarity.toFixed(4)}
+            </p>
+          </div>
+
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {result.content}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</section>
 
             <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <div className="flex items-center justify-between">

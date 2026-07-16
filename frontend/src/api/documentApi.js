@@ -49,3 +49,18 @@ export const chunkDocument = async (documentId) => {
 
   return response.data;
 };
+
+export const embedDocument = async (documentId) => {
+  const response = await apiClient.post(`/documents/${documentId}/embed`);
+
+  return response.data;
+};
+
+export const searchDocument = async ({ documentId, query, topK }) => {
+  const response = await apiClient.post(`/documents/${documentId}/search`, {
+    query,
+    top_k: topK,
+  });
+
+  return response.data;
+};
