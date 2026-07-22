@@ -29,7 +29,12 @@ from app.services.chunking_service import split_text_into_chunks
 
 from app.services.embedding_service import generate_embedding
 
-from app.schemas.document import DocumentSearchResult
+from app.schemas.document import (
+    DocumentAskResponse,
+    DocumentAskSource,
+    DocumentSearchResult,
+)
+from app.services.rag_service import generate_mock_rag_answer
 from app.services.search_service import cosine_similarity
 
 def upload_document(
@@ -329,3 +334,44 @@ def search_user_document_chunks(
     results.sort(key=lambda result: result.similarity, reverse=True)
 
     return results[:top_k]
+
+def ask_user_document(
+    db: Session,
+    *,
+    document_id: int,
+    question: str,
+    top_k: int,
+    current_user: User,
+):
+    cleaned_question = question.strip()
+
+    if not cleaned_question:
+        raise bad_request_error("Question cannot be empty")
+
+    search_results = search_user_document_chunks(
+        db,
+        document_id=document_id,
+        query=cleaned_question,
+        top_k=top_k,
+        current_user=current_user,
+    )
+
+    answer = generate_mock_rag_answer(
+        question=cleaned_question,
+        search_results=search_results,
+    )
+
+    sources = [
+        DocumentAskSource(
+            chunk_id=result.chunk_id,
+            chunk_index=result.chunk_index,
+            content=result.content,
+            similarity=result.similarity,
+        )
+        for result in search_results
+    ]
+
+    return DocumentAskResponse(
+        answer=answer,
+        sources=sources,
+    )

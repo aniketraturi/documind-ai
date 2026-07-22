@@ -41,3 +41,20 @@ class DocumentSearchResult(BaseModel):
     chunk_index: int
     content: str
     similarity: float
+
+
+class DocumentAskRequest(BaseModel):
+    question: str
+    top_k: int = 5
+
+
+class DocumentAskSource(BaseModel):
+    chunk_id: int
+    chunk_index: int
+    content: str
+    similarity: float
+
+
+class DocumentAskResponse(BaseModel):
+    answer: str
+    sources: list[DocumentAskSource]

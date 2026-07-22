@@ -5,6 +5,8 @@ from app.api.dependencies import get_current_user
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.document import (
+    DocumentAskRequest,
+    DocumentAskResponse,
     DocumentChunkResponse,
     DocumentDetailResponse,
     DocumentResponse,
@@ -12,6 +14,7 @@ from app.schemas.document import (
     DocumentSearchResult,
 )
 from app.services.document_service import (
+    ask_user_document,
     chunk_user_document,
     delete_user_document,
     embed_user_document_chunks,
@@ -159,6 +162,24 @@ def search_document_route(
         db,
         document_id=document_id,
         query=request.query,
+        top_k=request.top_k,
+        current_user=current_user,
+    )
+
+@router.post(
+    "/{document_id}/ask",
+    response_model=DocumentAskResponse,
+)
+def ask_document_route(
+    document_id: int,
+    request: DocumentAskRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return ask_user_document(
+        db,
+        document_id=document_id,
+        question=request.question,
         top_k=request.top_k,
         current_user=current_user,
     )
