@@ -54,7 +54,7 @@ export const embedDocument = async (documentId) => {
   const response = await apiClient.post(`/documents/${documentId}/embed`);
 
   return response.data;
-};
+}; 
 
 export const searchDocument = async ({ documentId, query, topK }) => {
   const response = await apiClient.post(`/documents/${documentId}/search`, {
