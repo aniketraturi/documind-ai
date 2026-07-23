@@ -36,7 +36,7 @@ export const getDocumentChunks = async (documentId) => {
   const response = await apiClient.get(`/documents/${documentId}/chunks`);
 
   return response.data;
-};
+};  
 
 export const processDocument = async (documentId) => {
   const response = await apiClient.post(`/documents/${documentId}/process`);
@@ -59,6 +59,15 @@ export const embedDocument = async (documentId) => {
 export const searchDocument = async ({ documentId, query, topK }) => {
   const response = await apiClient.post(`/documents/${documentId}/search`, {
     query,
+    top_k: topK,
+  });
+
+  return response.data;
+};
+
+export const askDocument = async ({ documentId, question, topK }) => {
+  const response = await apiClient.post(`/documents/${documentId}/ask`, {
+    question,
     top_k: topK,
   });
 

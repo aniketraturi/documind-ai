@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import {
+  askDocument,
   chunkDocument,
   embedDocument,
   getDocumentById,
@@ -28,6 +29,11 @@ function DocumentDetailPage() {
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [embedding, setEmbedding] = useState(false);
+
+  const [question, setQuestion] = useState("");
+  const [answerTopK, setAnswerTopK] = useState(5);
+  const [asking, setAsking] = useState(false);
+  const [askResult, setAskResult] = useState(null);
 
   const loadDocumentData = async () => {
     try {
@@ -188,6 +194,35 @@ function DocumentDetailPage() {
   }
 };
 
+const handleAskDocument = async (event) => {
+  event.preventDefault();
+
+  const cleanedQuestion = question.trim();
+
+  if (!cleanedQuestion) {
+    setMessage("Please enter a question");
+    return;
+  }
+
+  try {
+    setAsking(true);
+    setMessage("");
+
+    const result = await askDocument({
+      documentId,
+      question: cleanedQuestion,
+      topK: Number(answerTopK),
+    });
+
+    setAskResult(result);
+  } catch (error) {
+    console.error(error);
+    const detail = error.response?.data?.detail || "Ask failed";
+    setMessage(detail);
+  } finally {
+    setAsking(false);
+  }
+};
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -427,6 +462,114 @@ function DocumentDetailPage() {
           </p>
         </div>
       ))}
+    </div>
+  )}
+</section>
+
+            <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+    <div>
+      <h2 className="text-xl font-semibold">Ask AI</h2>
+      <p className="mt-2 text-sm text-slate-400">
+        Ask a question about this document. The answer uses the most relevant
+        chunks as sources.
+      </p>
+    </div>
+
+    <span className="w-fit rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+      RAG preview
+    </span>
+  </div>
+
+  <form onSubmit={handleAskDocument} className="mt-6 space-y-4">
+    <div>
+      <label className="mb-2 block text-sm text-slate-300">
+        Your question
+      </label>
+
+      <textarea
+        value={question}
+        onChange={(event) => setQuestion(event.target.value)}
+        rows={3}
+        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400"
+        placeholder="Example: What are the main points in this document?"
+      />
+    </div>
+
+    <div className="flex flex-col gap-3 md:flex-row md:items-end">
+      <div>
+        <label className="mb-2 block text-sm text-slate-300">
+          Sources to use
+        </label>
+
+        <input
+          type="number"
+          min="1"
+          max="10"
+          value={answerTopK}
+          onChange={(event) => setAnswerTopK(event.target.value)}
+          className="w-32 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-cyan-400"
+        />
+      </div>
+
+      <button
+        type="submit"
+        disabled={asking || document.status !== "embedded"}
+        className="rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {asking ? "Thinking..." : "Ask document"}
+      </button>
+    </div>
+  </form>
+
+  {document.status !== "embedded" && (
+    <p className="mt-4 text-sm text-slate-400">
+      Process, chunk, and embed this document before asking questions.
+    </p>
+  )}
+
+  {askResult && (
+    <div className="mt-6 space-y-6">
+      <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+        <h3 className="font-semibold text-white">Answer</h3>
+
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-300">
+          {askResult.answer}
+        </p>
+      </div>
+
+      <div>
+        <h3 className="font-semibold text-white">Sources used</h3>
+
+        {askResult.sources.length === 0 ? (
+          <p className="mt-3 text-sm text-slate-400">
+            No sources were returned.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-4">
+            {askResult.sources.map((source) => (
+              <div
+                key={source.chunk_id}
+                className="rounded-xl border border-slate-800 bg-slate-950 p-4"
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <p className="text-sm font-semibold text-cyan-400">
+                    Chunk #{source.chunk_index + 1}
+                  </p>
+
+                  <p className="text-sm text-slate-400">
+                    Similarity: {source.similarity.toFixed(4)}
+                  </p>
+                </div>
+
+                <p className="mt-3 text-sm leading-6 text-slate-300">
+                  {source.content}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )}
 </section>
