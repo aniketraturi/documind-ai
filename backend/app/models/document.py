@@ -37,9 +37,12 @@ class Document(Base):
 
     owner = relationship("User", back_populates="documents")
     chunks = relationship(
-    "DocumentChunk",
-    back_populates="document",
-    cascade="all, delete-orphan",
+        "DocumentChunk",
+        back_populates="document",
+        cascade="all, delete-orphan",
     )
-
-    
+    questions = relationship(
+        "DocumentQuestion",
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
